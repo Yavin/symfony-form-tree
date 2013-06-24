@@ -1,0 +1,16 @@
+{
+    "name": "yavin/symfony-form-tree",
+    "description": "create select field for tree structure",
+    "require": {
+        "symfony/form": "*",
+        "symfony/options-resolver": "*",
+    },
+    "license": "mit",
+    "authors": [
+        {
+            "name": "Yavin",
+            "email": "yavin.yavin@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable"
+}
