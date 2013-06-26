@@ -27,6 +27,13 @@ class TreeType extends AbstractType
             'treeLevelField' => 'treeLevel',
         ));
 
+        $optionsResolver->setAllowedTypes(array(
+            'levelPrefix' => 'string',
+            'orderColumns' => 'array',
+            'prefixAttributeName' => array('string', 'null'),
+            'treeLevelField' => 'string',
+        ));
+
         $this->options = $optionsResolver->resolve($options);
     }
 

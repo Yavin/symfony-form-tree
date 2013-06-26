@@ -13,33 +13,50 @@ use Symfony\Bridge\Doctrine\Form\DoctrineOrmExtension;
 use Symfony\Component\Form\Extension\Core\View\ChoiceView;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\Form\Forms;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 use Yavin\Symfony\Form\Type\TreeType;
 use Yavin\Symfony\Form\Type\TreeTypeExtension;
+use Yavin\Symfony\Form\Type\TreeTypeGuesser;
 use Yavin\Symfony\Form\Type\Tests\Fixtures\TreeEntity;
 use Yavin\Symfony\Form\Type\Tests\Fixtures\NotTreeEntity;
 
 
 class TreeTypeTest extends \PHPUnit_Framework_TestCase
 {
+    /**
+     * Tree type entity class
+     */
     const TREE_ENTITY_CLASS = 'Yavin\\Symfony\\Form\\Type\\Tests\\Fixtures\\TreeEntity';
+
+    /**
+     * Not three type entity class
+     */
     const NOT_TREE_ENTITY_CLASS = 'Yavin\\Symfony\\Form\\Type\\Tests\\Fixtures\\NotTreeEntity';
 
+    /**
+     * name of form field type
+     */
     const FORM_TYPE_NAME = 'y_tree';
 
     /**
      * @var TreeType
      */
-    public $treeType;
+    protected $treeType;
+
+    /**
+     * @var TreeTypeGuesser
+     */
+    protected $treeTypeGuesser;
 
     /**
      * @var EntityManager
      */
-    public $em;
+    protected $em;
 
     /**
      * @var EventManager
      */
-    public $evm;
+    protected $evm;
 
     /**
      * @var FormFactoryInterf
@@ -54,12 +71,7 @@ class TreeTypeTest extends \PHPUnit_Framework_TestCase
         $this->em = $this->createTestEntityManager();
         $this->emRegistry = $this->createRegistryMock('default', $this->em);
         $this->evm = $this->em->getEventManager();
-
         $this->evm->addEventSubscriber(new TreeListener());
-
-        $this->factory = Forms::createFormFactoryBuilder()
-            ->addExtensions($this->getExtensions())
-            ->getFormFactory();
 
         $schemaTool = new SchemaTool($this->em);
         $classes = array(
@@ -76,12 +88,12 @@ class TreeTypeTest extends \PHPUnit_Framework_TestCase
             $schemaTool->createSchema($classes);
         } catch (\Exception $e) {
         }
-
-        $this->treeType = new TreeType();
     }
 
     public function testTreeElementsWithNoParents()
     {
+        $this->createFormFactory();
+
         $entity1 = new TreeEntity(1, 'Foo', null);
         $entity2 = new TreeEntity(2, 'Bar', null);
 
@@ -103,6 +115,8 @@ class TreeTypeTest extends \PHPUnit_Framework_TestCase
 
     public function testTreeElementsWithParents()
     {
+        $this->createFormFactory();
+
         $entity1 = new TreeEntity(1, 'Foo', null);
         $entity2 = new TreeEntity(2, 'Bar', $entity1);
 
@@ -122,17 +136,178 @@ class TreeTypeTest extends \PHPUnit_Framework_TestCase
         ));
     }
 
+    public function testTreeElementsThreeDeepTest()
+    {
+        $this->createFormFactory();
+
+        $entity1 = new TreeEntity(1, 'Foo', null);
+        $entity2 = new TreeEntity(2, 'Bar', $entity1);
+        $entity3 = new TreeEntity(3, 'Baz', $entity2);
+
+        $this->persist(array($entity1, $entity2, $entity3));
+
+        $field = $this->factory->createNamed('name', self::FORM_TYPE_NAME, null, array(
+            'em' => 'default',
+            'class' => self::TREE_ENTITY_CLASS,
+            'required' => false,
+            'property' => 'name'
+        ));
+
+        $formViewChoices = $field->createView()->vars['choices'];
+        $this->assertEquals($formViewChoices, array(
+            1 => new ChoiceView($entity1, '1', 'Foo'),
+            2 => new ChoiceView($entity2, '2', '--Bar'),
+            3 => new ChoiceView($entity3, '3', '----Baz'),
+        ));
+    }
+
+    public function testCustomPrefix()
+    {
+        $this->createFormFactory(array(
+            'levelPrefix' => '+',
+        ));
+
+        $entity1 = new TreeEntity(1, 'Foo', null);
+        $entity2 = new TreeEntity(2, 'Bar', $entity1);
+        $entity3 = new TreeEntity(3, 'Baz', $entity2);
+
+        $this->persist(array($entity1, $entity2, $entity3));
+
+        $field = $this->factory->createNamed('name', self::FORM_TYPE_NAME, null, array(
+            'em' => 'default',
+            'class' => self::TREE_ENTITY_CLASS,
+            'required' => false,
+            'property' => 'name'
+        ));
+
+        $formViewChoices = $field->createView()->vars['choices'];
+        $this->assertEquals($formViewChoices, array(
+            1 => new ChoiceView($entity1, '1', 'Foo'),
+            2 => new ChoiceView($entity2, '2', '+Bar'),
+            3 => new ChoiceView($entity3, '3', '++Baz'),
+        ));
+    }
+
+    public function testPrefixAttributeName()
+    {
+        $this->createFormFactory();
+
+        $entity1 = new TreeEntity(1, 'Foo', null);
+        $this->persist(array($entity1));
+
+        $field = $this->factory->createNamed('name', self::FORM_TYPE_NAME, null, array(
+            'em' => 'default',
+            'class' => self::TREE_ENTITY_CLASS,
+            'required' => false,
+            'property' => 'name'
+        ));
+
+        $formViewAttributes = $field->createView()->vars['attr'];
+
+        $this->assertEquals($formViewAttributes['data-level-prefix'], '--');
+    }
+
+    /**
+     * @expectedException Symfony\Component\OptionsResolver\Exception\InvalidOptionsException
+     */
+    public function testInvalidTreeLevelField()
+    {
+        $this->createFormFactory(array(
+            'treeLevel' => 'invalidName',
+        ));
+
+        $entity1 = new TreeEntity(1, 'Foo', null);
+        $entity2 = new TreeEntity(2, 'Bar', $entity1);
+
+        $this->persist(array($entity1, $entity2));
+
+        $field = $this->factory->createNamed('name', self::FORM_TYPE_NAME, null, array(
+            'em' => 'default',
+            'class' => self::TREE_ENTITY_CLASS,
+            'required' => false,
+            'property' => 'name'
+        ));
+    }
+
+    /**
+     * @expectedException Doctrine\ORM\Query\QueryException
+     */
+    public function testInvalidSortFieldName()
+    {
+        $this->createFormFactory(array(
+            'orderColumns' => array('invalidFoo'),
+        ));
+
+        $entity1 = new TreeEntity(1, 'Foo', null);
+        $entity2 = new TreeEntity(2, 'Bar', $entity1);
+
+        $this->persist(array($entity1, $entity2));
+
+        $field = $this->factory->createNamed('name', self::FORM_TYPE_NAME, null, array(
+            'em' => 'default',
+            'class' => self::TREE_ENTITY_CLASS,
+            'required' => false,
+            'property' => 'name'
+        ));
+
+        $field->createView();
+    }
+
+    /**
+     * @expectedException Symfony\Component\OptionsResolver\Exception\InvalidOptionsException
+     */
+    public function testInvalidOptionsType()
+    {
+        $this->createFormFactory(array(
+            'levelPrefix' => 123, //integer
+        ));
+    }
+
+    public function testQueryBuilder()
+    {
+        $this->createFormFactory();
+
+        $optionsResolver = new OptionsResolver();
+        $this->treeType->setDefaultOptions($optionsResolver);
+
+        $options = $optionsResolver->resolve(array());
+
+        $this->assertArrayHasKey('query_builder', $options);
+        $this->assertInstanceOf('\Closure', $options['query_builder']);
+
+        $repository = $this->em->getRepository(self::TREE_ENTITY_CLASS);
+        $qb = $options['query_builder']($repository);
+
+        $this->assertInstanceOf('Doctrine\ORM\QueryBuilder', $qb);
+    }
+
+    public function testExpandedOptions()
+    {
+        $this->createFormFactory();
+
+        $optionsResolver = new OptionsResolver();
+        $this->treeType->setDefaultOptions($optionsResolver);
+
+        $options = $optionsResolver->resolve(array());
+
+        $this->assertFalse($options['expanded']);
+    }
+
     public function testGetParent()
     {
+        $this->createFormFactory();
+
         $this->assertSame($this->treeType->getParent(), 'entity');
     }
 
     public function testGetName()
     {
+        $this->createFormFactory();
+
         $this->assertSame($this->treeType->getName(), 'y_tree');
     }
 
-    public function checkRequirements()
+    protected function checkRequirements()
     {
         $classes = array(
             'PDO',
@@ -162,7 +337,7 @@ class TreeTypeTest extends \PHPUnit_Framework_TestCase
         $this->em->flush();
     }
 
-    public function createTestEntityManager($paths = array())
+    protected function createTestEntityManager($paths = array())
     {
         $config = new \Doctrine\ORM\Configuration();
         $config->setEntityNamespaces(array('SymfonyTestsDoctrine' => self::TREE_ENTITY_CLASS));
@@ -192,11 +367,20 @@ class TreeTypeTest extends \PHPUnit_Framework_TestCase
         return $registry;
     }
 
+    protected function createFormFactory(array $options = array())
+    {
+        $this->treeType = new TreeType($options);
+
+        $this->factory = Forms::createFormFactoryBuilder()
+            ->addExtensions($this->getExtensions())
+            ->addType($this->treeType)
+            ->getFormFactory();
+    }
+
     protected function getExtensions()
     {
         return array(
             new DoctrineOrmExtension($this->emRegistry),
-            new TreeTypeExtension(),
         );
     }
 }
