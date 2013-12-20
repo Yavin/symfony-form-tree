@@ -6,7 +6,9 @@
         "symfony/options-resolver": "~2.1",
         "symfony/property-access": "~2.2",
         "doctrine/orm": "~2.0",
-        "doctrine/common": "~2.0"
+        "doctrine/common": "~2.0",
+        "gedmo/doctrine-extensions": "~2.1",
+        "symfony/doctrine-bridge": "~2.0"
     },
     "license": "mit",
     "authors": [
