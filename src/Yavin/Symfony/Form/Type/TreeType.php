@@ -5,13 +5,12 @@ namespace Yavin\Symfony\Form\Type;
 use Doctrine\ORM\EntityRepository;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Form\FormInterface;
+use Symfony\Component\Form\FormView;
+use Symfony\Component\OptionsResolver\Options;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
-use Symfony\Component\Form\FormView;
-use Symfony\Component\Form\FormInterface;
 use Symfony\Component\PropertyAccess\PropertyAccess;
-use Symfony\Component\OptionsResolver\Options;
-
 
 class TreeType extends AbstractType
 {
@@ -52,7 +51,7 @@ class TreeType extends AbstractType
             $dataObject = $choice->data;
             $level = $accessor->getValue($dataObject, $this->options['treeLevelField']);
 
-            $choice->label = str_repeat($levelPrefix, $level).$choice->label;
+            $choice->label = str_repeat($levelPrefix, $level) . $choice->label;
         }
 
         $attributeName = $this->options['prefixAttributeName'];
@@ -67,10 +66,10 @@ class TreeType extends AbstractType
 
         if (!empty($orderColumns)) {
 
-            $queryBuilder = function($repository) use ($orderColumns) {
+            $queryBuilder = function ($repository) use ($orderColumns) {
                 $qb = $repository->createQueryBuilder('a');
                 foreach ($orderColumns as $columnName) {
-                    $qb->addOrderBy('a.'.$columnName);
+                    $qb->addOrderBy('a.' . $columnName);
                 }
                 return $qb;
             };
@@ -94,5 +93,5 @@ class TreeType extends AbstractType
     {
         return 'y_tree';
     }
-}
 
+}
