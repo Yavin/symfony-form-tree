@@ -2,31 +2,26 @@
 
 namespace Yavin\Symfony\Form\Type;
 
-
-use Doctrine\ORM\EntityManager;
-use Symfony\Component\Form\Guess\Guess;
 use Doctrine\Common\Annotations\Reader;
 use Doctrine\Common\Annotations\SimpleAnnotationReader;
-use Symfony\Component\Form\Guess\TypeGuess;
+use Doctrine\ORM\EntityManager;
 use Symfony\Component\Form\FormTypeGuesserInterface;
+use Symfony\Component\Form\Guess\Guess;
+use Symfony\Component\Form\Guess\TypeGuess;
 
 
 class TreeTypeGuesser implements FormTypeGuesserInterface
 {
     const TREE_ANNOTATION = '\\Gedmo\\Mapping\\Annotation\\Tree';
-
     /**
      * @var EntityManager
      */
     protected $em;
-
     /**
      * @var Reader
      */
     protected $reader;
-
     private $cache;
-
 
     public function __construct(EntityManager $em, Reader $reader)
     {
@@ -64,6 +59,22 @@ class TreeTypeGuesser implements FormTypeGuesserInterface
         return new TypeGuess('y_tree', array('class' => $mapping['targetEntity'], 'multiple' => $multiple), Guess::VERY_HIGH_CONFIDENCE);
     }
 
+    protected function getMetadata($class)
+    {
+        if (array_key_exists($class, $this->cache)) {
+            return $this->cache[$class];
+        }
+
+        $this->cache[$class] = null;
+        try {
+            return $this->cache[$class] = $this->em->getClassMetadata($class);
+        } catch (MappingException $e) {
+            // not an entity or mapped super class
+        } catch (LegacyMappingException $e) {
+            // not an entity or mapped super class, using Doctrine ORM 2.2
+        }
+    }
+
     /**
      * @{inherit}
      */
@@ -96,21 +107,4 @@ class TreeTypeGuesser implements FormTypeGuesserInterface
 
     }
 
-    protected function getMetadata($class)
-    {
-        if (array_key_exists($class, $this->cache)) {
-            return $this->cache[$class];
-        }
-
-        $this->cache[$class] = null;
-        try {
-            return $this->cache[$class] = $this->em->getClassMetadata($class);
-        } catch (MappingException $e) {
-            // not an entity or mapped super class
-        } catch (LegacyMappingException $e) {
-            // not an entity or mapped super class, using Doctrine ORM 2.2
-        }
-    }
-
 }
-

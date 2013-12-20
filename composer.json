@@ -2,8 +2,11 @@
     "name": "yavin/symfony-form-tree",
     "description": "create select field for tree structure",
     "require": {
-        "symfony/form": "*",
-        "symfony/options-resolver": "*",
+        "symfony/form": "~2.0",
+        "symfony/options-resolver": "~2.1",
+        "symfony/property-access": "~2.2",
+        "doctrine/orm": "~2.0",
+        "doctrine/common": "~2.0"
     },
     "license": "mit",
     "authors": [
