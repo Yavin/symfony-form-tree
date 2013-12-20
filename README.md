@@ -1,4 +1,7 @@
 # Symfony Form Tree extension
+
+[![Build Status](https://travis-ci.org/Yavin/symfony-form-tree.png?branch=master)](https://travis-ci.org/Yavin/symfony-form-tree)
+
 This extension provide displaying doctrine tree entity types in synfony forms. It add a prefix to option names in select list that indicates tree level.
 
 ```html
