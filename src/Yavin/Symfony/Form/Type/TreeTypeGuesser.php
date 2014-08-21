@@ -2,89 +2,38 @@
 
 namespace Yavin\Symfony\Form\Type;
 
-use Doctrine\Common\Annotations\Reader;
-use Doctrine\Common\Annotations\SimpleAnnotationReader;
-use Doctrine\ORM\EntityManager;
-use Symfony\Component\Form\FormTypeGuesserInterface;
+use Doctrine\ORM\Mapping\ClassMetadataInfo;
+use Gedmo\Tree\TreeListener;
+use Symfony\Bridge\Doctrine\Form\DoctrineOrmTypeGuesser;
 use Symfony\Component\Form\Guess\Guess;
 use Symfony\Component\Form\Guess\TypeGuess;
 
-
-class TreeTypeGuesser implements FormTypeGuesserInterface
+class TreeTypeGuesser extends DoctrineOrmTypeGuesser
 {
     const TREE_ANNOTATION = '\\Gedmo\\Mapping\\Annotation\\Tree';
-    /**
-     * @var EntityManager
-     */
-    protected $em;
-    /**
-     * @var Reader
-     */
-    protected $reader;
-    private $cache;
-
-    public function __construct(EntityManager $em, Reader $reader)
-    {
-        $this->em = $em;
-        $this->reader = $reader;
-        $this->cache = array();
-    }
 
     /**
-     * @{inherit}
+     * {@inheritdoc}
      */
     public function guessType($class, $property)
     {
-        if (!$metadata = $this->getMetadata($class)) {
+        if (!$this->isTree($class, $property)) {
             return;
         }
 
-        if (!$metadata->hasAssociation($property)) {
-            return;
-        }
-
-        $mapping = $metadata->getAssociationMapping($property);
-
-        $targetMetadata = $this->getMetadata($mapping['targetEntity']);
-        $targetClassReflection = $targetMetadata->getReflectionClass();
-
-        $annotationObj = $this->reader->getClassAnnotation($targetClassReflection, self::TREE_ANNOTATION);
-
-        if (empty($annotationObj)) {
-            return;
-        }
-
+        $metadata = $this->getSingleMetadata($class);
+        $associationMapping = $metadata->getAssociationMapping($property);
         $multiple = $metadata->isCollectionValuedAssociation($property);
 
-        return new TypeGuess('y_tree', array('class' => $mapping['targetEntity'], 'multiple' => $multiple), Guess::VERY_HIGH_CONFIDENCE);
-    }
-
-    protected function getMetadata($class)
-    {
-        if (array_key_exists($class, $this->cache)) {
-            return $this->cache[$class];
-        }
-
-        $this->cache[$class] = null;
-        try {
-            return $this->cache[$class] = $this->em->getClassMetadata($class);
-        } catch (MappingException $e) {
-            // not an entity or mapped super class
-        } catch (LegacyMappingException $e) {
-            // not an entity or mapped super class, using Doctrine ORM 2.2
-        }
+        return new TypeGuess(
+            'y_tree',
+            array('class' => $associationMapping['targetEntity'], 'multiple' => $multiple),
+            Guess::VERY_HIGH_CONFIDENCE
+        );
     }
 
     /**
-     * @{inherit}
-     */
-    public function guessRequired($class, $property)
-    {
-
-    }
-
-    /**
-     * @{inherit}
+     * {@inheritdoc}
      */
     public function guessMaxLength($class, $property)
     {
@@ -92,19 +41,57 @@ class TreeTypeGuesser implements FormTypeGuesserInterface
     }
 
     /**
-     * @{inherit}
-     */
-    public function guessMinLength($class, $property)
-    {
-
-    }
-
-    /**
-     * @{inherit}
+     * {@inheritdoc}
      */
     public function guessPattern($class, $property)
     {
 
     }
 
+    /**
+     * @param string $class
+     * @return ClassMetadataInfo
+     */
+    protected function getSingleMetadata($class)
+    {
+        $metadata = parent::getMetadata($class);
+
+        if (!empty($metadata)) {
+            return $metadata[0];
+        }
+    }
+
+    protected function isTree($class, $property)
+    {
+        $metadata = $this->getSingleMetadata($class);
+
+        if (!$metadata->hasAssociation($property)) {
+            return false;
+        }
+
+        $associationMapping = $metadata->getAssociationMapping($property);
+        $targetEntityClass = $associationMapping['targetEntity'];
+
+        $manager = $this->registry->getManagerForClass($targetEntityClass);
+        $listeners = $manager->getEventManager()->getListeners();
+
+        if (empty($listeners['loadClassMetadata'])) {
+            return false;
+        }
+
+        foreach ($listeners['loadClassMetadata'] as $listener) {
+            if ($listener instanceof TreeListener) {
+                try {
+                    $strategy = $listener->getStrategy($manager, $targetEntityClass);
+                } catch (\Gedmo\Exception $e) {
+                    return false;
+                }
+                if (!empty($strategy)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
 }

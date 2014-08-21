@@ -4,104 +4,75 @@
 
 This extension provide displaying doctrine tree entity types in synfony forms. It add a prefix to option names in select list that indicates tree level.
 
+![](doc/example.png)
+
 ```html
-<select name="field-name" data-level-prefix="--">
-    <option value="">root node 1</option>
-    <option value="">root node 2</option>
-    <option value="">--node level 1</option>
-    <option value="">----node level 2</option>
-    <option value="">--another node level 1</option>
+<select name="..." data-level-prefix="--">
+    <option value="1">Motors</option>
+    <option value="2">Electronics</option>
+    <option value="3">--Cell phones</option>
+    <option value="4">----Samsung</option>
+    <option value="5">--Computers</option>
+    <option value="6">Fasion</option>
 </select>
 ```
 
-## Usage
-Register form type as service in symfony config
-```
-services:
-    yavin.symfony.form.tree:
-        class: "Yavin\\Symfony\\Form\\Type\\TreeType"
-        tags:
-            - { name: form.type, alias: y_tree }
-```
+## Instalation
+1. Add library to composer.json
+   ```json
+   "yavin/symfony-form-tree": "dev-master"
+   ```
+   and run command
+   ```
+   composer update yavin/symfony-form-tree
+   ```
 
-Then you can use this as it in your form types
-```php
-namespace Acme\DemoBundle\Form;
+2. Add services in your bundle services file `Resources/config/services.xml`:
+   ```xml
+   <service id="symfony.form.type.tree" class="Yavin\Symfony\Form\Type\TreeType">
+       <argument type="service" id="property_accessor"/>
+       <tag name="form.type" alias="y_tree"/>
+   </service>
+   <service id="symfony.form.type_guesser.tree" class="Yavin\Symfony\Form\Type\TreeTypeGuesser">
+       <argument type="service" id="doctrine"/>
+       <tag name="form.type_guesser"/>
+   </service>
+   ```
 
-use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\FormBuilderInterface;
-
-class PageType extends AbstractType
-{
+   or if you have `services.yml`:
+   ```yml
+   services:
+       symfony.form.type.tree:
+           class: Yavin\Symfony\Form\Type\TreeType
+           arguments: [ "@property_accessor" ]
+           tags:
+               - { name: form.type, alias: y_tree }
+       symfony.form.type_guesser.tree:
+           class: Yavin\Symfony\Form\Type\TreeTypeGuesser
+           arguments: [ "@doctrine" ]
+           tags:
+               - { name: form.type_guesser }
+   ```
+3. Then add field to tree model. In this example
+    ```php
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
-        $builder
-            ->add('name')
-            ->add('categories', 'y_tree', array(
-                'class' => 'Acme\\DemoBundle\\Entity\\Category',
-            ))
-        ;
+        $builder->add('category'); //extension will guess field type
+
+        //or this is full example with default options:
+
+        $builder->add('category', 'y_tree', array(
+            'class' => 'Acme\DemoBundle\Entity\Category', // tree class
+            'levelPrefix' => '--',
+            'orderFields' => array('treeRoot', 'treeLeft'),
+            'prefixAttributeName' => 'data-level-prefix',
+            'treeLevelField' => 'treeLevel',
+        ));
     }
+    ```
 
-    public function getName()
-    {
-        return 'acme_page';
-    }
-}
-```
+    This extension assume that in tree model You have field: `treeRoot`, `treeLeft` and `treeLevel`.
+    It can be changed in field options.
 
-Extension asume that your tree entities have tree properties named: `treeLevel`, `treeRoot`, `treeLeft`.
-If your entities have different names, just pass it as options to service like that:
-```
-services:
-    yavin.symfony.form.tree:
-        class: "Yavin\\Symfony\\Form\\Type\\TreeType"
-        arguments:
-            -
-                treeLevelField: "lvl"
-        tags:
-            - { name: form.type, alias: y_tree }
-```
-
-
-## Options
-This is the list of options you can pass in constructor like in above example.
-
-* `levelPrefix`, default: `--` - prefix string for level
-* `treeLevelField`, default: `treeLevel` - tree level field name
-* `prefixAttributeName`, default: `data-level-prefix` - attribute name that is added to select field that holds prefix string. Can be usefull for some javascript widgets.
-* `orderColumns`, default: `array('treeRoot', 'treeLeft')` - sorting columns names
-
-## Type guesser
-You can also add type guesser, so tree type entities can be auto detected.
-```
-services:
-    yavin.symfony.form.tree_guesser:
-        class: "Yavin\\Symfony\\Form\\Type\\TreeTypeGuesser"
-        arguments: [ "@doctrine.orm.entity_manager", "@annotation_reader" ]
-        tags:
-            - { name: form.type_guesser }
-```
-Then You can ommit field type and class option:
-```php
-namespace Acme\DemoBundle\Form;
-
-use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\FormBuilderInterface;
-
-class PageType extends AbstractType
-{
-    public function buildForm(FormBuilderInterface $builder, array $options)
-    {
-        $builder
-            ->add('name')
-            ->add('categories')
-        ;
-    }
-
-    public function getName()
-    {
-        return 'acme_page';
-    }
-}
-```
+    This is example tree entity:
+    [category tree entity](tests/Yavin/Symfony/Form/Type/Tests/Fixtures/Category.php)

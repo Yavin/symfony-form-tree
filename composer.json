@@ -1,6 +1,11 @@
 {
     "name": "yavin/symfony-form-tree",
-    "description": "create select field for tree structure",
+    "description": "create select field with indentation for tree structure",
+    "license": "mit",
+    "homepage": "https://github.com/Yavin/symfony-form-tree",
+    "authors": [
+        {"name": "Yavin", "email": "yavin.yavin@gmail.com"}
+    ],
     "require": {
         "symfony/form": "~2.0",
         "symfony/options-resolver": "~2.1",
@@ -10,17 +15,16 @@
         "gedmo/doctrine-extensions": "~2.1",
         "symfony/doctrine-bridge": "~2.0"
     },
-    "license": "mit",
-    "authors": [
-        {
-            "name": "Yavin",
-            "email": "yavin.yavin@gmail.com"
-        }
-    ],
+    "require-dev": {
+        "phpunit/phpunit": "~4.0"
+    },
     "minimum-stability": "stable",
     "autoload":{
         "psr-0":{
             "Yavin":"src/"
         }
+    },
+    "config": {
+        "bin-dir": "bin"
     }
 }
