@@ -78,5 +78,5 @@ It is tested and should work with symfony 2.3-2.8
 * [Custom, callback provided prefix](doc/custom_prefix.md)
 * [Set default options to all tree select fields](doc/default_options.md)
 
-## Lincense
+## License
 [MIT](https://opensource.org/licenses/MIT)
