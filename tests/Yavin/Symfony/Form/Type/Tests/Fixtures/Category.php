@@ -53,14 +53,6 @@ class Category
     private $treeRight;
 
     /**
-     * @var integer
-     *
-     * @Gedmo\TreeRoot
-     * @ORM\Column(type="integer", nullable=true)
-     */
-    private $treeRoot;
-
-    /**
      * @var Category
      *
      * @Gedmo\TreeParent
@@ -149,22 +141,6 @@ class Category
     public function getParent()
     {
         return $this->parent;
-    }
-
-    /**
-     * @param int $root
-     */
-    public function setTreeRoot($root)
-    {
-        $this->treeRoot = $root;
-    }
-
-    /**
-     * @return int
-     */
-    public function getTreeRoot()
-    {
-        return $this->treeRoot;
     }
 
     /**

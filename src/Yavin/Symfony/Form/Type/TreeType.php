@@ -7,10 +7,10 @@ use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\Form\FormView;
 use Symfony\Component\OptionsResolver\Options;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use Symfony\Component\PropertyAccess\PropertyAccess;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
-use Yavin\Symfony\Form\Type\Loader\TreeTypeLoader;
 
 class TreeType extends AbstractType
 {
@@ -43,51 +43,60 @@ class TreeType extends AbstractType
         }
 
         foreach ($view->vars['choices'] as $choice) {
-
             $dataObject = $choice->data;
             $level = $this->propertyAccessor->getValue($dataObject, $options['treeLevelField']);
-
-            $choice->label = str_repeat($levelPrefix, $level) . $choice->label;
+            if (is_callable($levelPrefix)) {
+                $choice->label = $levelPrefix($choice->label, $level, $dataObject);
+            } else {
+                $choice->label = str_repeat($levelPrefix, $level) . $choice->label;
+            }
         }
 
-        if (!empty($options['prefixAttributeName'])) {
+        if (is_string($levelPrefix) && !empty($options['prefixAttributeName'])) {
             $view->vars['attr'][$options['prefixAttributeName']] = $levelPrefix;
         }
     }
 
-    public function setDefaultOptions(OptionsResolverInterface $resolver)
+    public function configureOptions(OptionsResolver $resolver)
     {
-        $type = $this;
-
-        $loader = function (Options $options) use ($type) {
-            if (null !== $options['query_builder']) {
-                return new TreeTypeLoader($options, $options['query_builder'], $options['em'], $options['class']);
-            }
-        };
-
-        $queryBuilder = function (EntityRepository $repository, Options $options) {
-            $qb = $repository->createQueryBuilder('a');
-            foreach ($options['orderFields'] as $columnName) {
-                $qb->addOrderBy(sprintf('a.%s', $columnName));
-            }
-            return $qb;
+        $queryBuilder = function (Options $options) {
+            return function (EntityRepository $repository) use ($options) {
+                $qb = $repository->createQueryBuilder('a');
+                foreach ($options['orderFields'] as $columnName => $order) {
+                    $qb->addOrderBy(sprintf('a.%s', $columnName), $order);
+                }
+                return $qb;
+            };
         };
 
         $resolver->setDefaults(array(
-            'loader' => $loader,
             'query_builder' => $queryBuilder,
             'expanded' => false,
-            'levelPrefix' => '--',
-            'orderFields' => array('treeRoot', 'treeLeft'),
+            'levelPrefix' => '-',
+            'orderFields' => array('treeLeft' => 'asc'),
             'prefixAttributeName' => 'data-level-prefix',
             'treeLevelField' => 'treeLevel',
         ));
 
         $resolver->setAllowedTypes(array(
-            'levelPrefix' => 'string',
+            'levelPrefix' => array('string', 'callable'),
             'orderFields' => 'array',
             'prefixAttributeName' => array('string', 'null'),
             'treeLevelField' => 'string',
         ));
+    }
+
+    public function setDefaultOptions(OptionsResolverInterface $resolver)
+    {
+        if (!$resolver instanceof OptionsResolver) {
+            throw new \InvalidArgumentException(
+                sprintf(
+                    'Custom resolver "%s" must extend "Symfony\Component\OptionsResolver\OptionsResolver".',
+                    get_class($resolver)
+                )
+            );
+        }
+
+        $this->configureOptions($resolver);
     }
 }

@@ -30,7 +30,7 @@ class TreeTypeTest extends TestBase
 
         $this->assertArrayHasKey('attr', $formView->vars);
         $this->assertArrayHasKey('data-level-prefix', $formView->vars['attr']);
-        $this->assertEquals('--', $formView->vars['attr']['data-level-prefix']);
+        $this->assertEquals('-', $formView->vars['attr']['data-level-prefix']);
 
         $formView = $this->formFactory->createNamed('category', 'y_tree', null, array(
             'class' => self::CATEGORY_CLASS,
@@ -41,111 +41,139 @@ class TreeTypeTest extends TestBase
         $this->assertEquals('~', $formView->vars['attr']['data-lorem']);
     }
 
-    public function testOrderColumnsPassedToQueryBuilderCallback()
+    public function testDefaultOrderColumnsAddedToQueryBuilder()
     {
-        $test = $this;
-
-        $this->formFactory->createNamed('category', 'y_tree', null, array(
+        $form = $this->formFactory->createNamed('category', 'y_tree', null, array(
             'class' => self::CATEGORY_CLASS,
-            'orderFields' => array('root', 'left'),
-            'query_builder' => function(EntityRepository $repository, Options $options) use ($test) {
-                $test->assertEquals(array('root', 'left'), $options['orderFields']);
-                return $repository->createQueryBuilder('a'); //to not throw exception
-            }
         ));
+
+        /** @var \Doctrine\ORM\QueryBuilder|\Closure $queryBuilder */
+        $queryBuilder = $form->getConfig()->getOption('query_builder');
+
+        //symfony < 2.7
+        if ($queryBuilder instanceof \Closure) {
+
+            $entityRepository = $this->getMockBuilder('Doctrine\ORM\EntityRepository')
+                ->disableOriginalConstructor()
+                ->getMock();
+
+            $queryBuilderMock = $this->getMockBuilder('Doctrine\ORM\QueryBuilder')
+                ->disableOriginalConstructor()
+                ->getMock();
+
+            $entityRepository
+                ->expects($this->any())
+                ->method('createQueryBuilder')
+                ->with('a')
+                ->willReturn($queryBuilderMock);
+
+            $queryBuilderMock
+                ->expects($this->once())
+                ->method('addOrderBy')
+                ->with('a.treeLeft', 'asc');
+
+            $queryBuilder = $queryBuilder($entityRepository);
+        }
+        //symfony >= 2.7
+        else {
+            $orderBy = $queryBuilder->getDQLPart('orderBy');
+            $this->assertCount(1, $orderBy);
+
+            $parts = $orderBy[0]->getParts();
+            $this->assertEquals($parts[0], 'a.treeLeft asc');
+        }
+
+        $this->assertInstanceOf('\Doctrine\ORM\QueryBuilder', $queryBuilder);
     }
 
     public function testOrderColumnsAddedToQueryBuilder()
     {
         $form = $this->formFactory->createNamed('category', 'y_tree', null, array(
             'class' => self::CATEGORY_CLASS,
+            'orderFields' => array(
+                'treeRight' => 'desc',
+                'treeLevel' => 'asc',
+            ),
         ));
 
-        /** @var \Closure $queryBuilderCallback */
-        $queryBuilderCallback = $form->getConfig()->getOption('query_builder');
-        $this->assertInstanceOf('\Closure', $queryBuilderCallback);
+        /** @var \Doctrine\ORM\QueryBuilder|\Closure $queryBuilder */
+        $queryBuilder = $form->getConfig()->getOption('query_builder');
 
-        $queryBuilder = $this->getMockBuilder('Doctrine\ORM\QueryBuilder')
-            ->disableOriginalConstructor()
-            ->getMock();
+        //symfony < 2.7
+        if ($queryBuilder instanceof \Closure) {
 
-        $queryBuilder
-            ->expects($this->at(0))
-            ->method('addOrderBy')
-            ->with('a.root')
-            ->willReturnSelf();
+            $entityRepository = $this->getMockBuilder('Doctrine\ORM\EntityRepository')
+                ->disableOriginalConstructor()
+                ->getMock();
 
-        $queryBuilder
-            ->expects($this->at(1))
-            ->method('addOrderBy')
-            ->with('a.left')
-            ->willReturnSelf();
+            $queryBuilderMock = $this->getMockBuilder('Doctrine\ORM\QueryBuilder')
+                ->disableOriginalConstructor()
+                ->getMock();
 
-        $repository = $this->getMockBuilder('Doctrine\ORM\EntityRepository')
-            ->disableOriginalConstructor()
-            ->getMock();
-        $repository
-            ->expects($this->once())
-            ->method('createQueryBuilder')
-            ->with('a')
-            ->willReturn($queryBuilder);
+            $entityRepository
+                ->expects($this->any())
+                ->method('createQueryBuilder')
+                ->with('a')
+                ->willReturn($queryBuilderMock);
 
-        $options = $this->getMock('Symfony\Component\OptionsResolver\Options');
-        $options->expects($this->once())
-            ->method('offsetGet')
-            ->with('orderFields')
-            ->willReturn(array('root', 'left'));
+            $queryBuilderMock
+                ->expects($this->at(0))
+                ->method('addOrderBy')
+                ->with('a.treeRight', 'desc');
 
-        $this->assertEquals($queryBuilder, $queryBuilderCallback($repository, $options));
+            $queryBuilderMock
+                ->expects($this->at(1))
+                ->method('addOrderBy')
+                ->with('a.treeLevel', 'asc');
+
+            $queryBuilder = $queryBuilder($entityRepository);
+        } else {
+            $orderBy = $queryBuilder->getDQLPart('orderBy');
+            $this->assertCount(2, $orderBy);
+
+            $parts = $orderBy[0]->getParts();
+            $this->assertEquals($parts[0], 'a.treeRight desc');
+            $parts = $orderBy[1]->getParts();
+            $this->assertEquals($parts[0], 'a.treeLevel asc');
+        }
+
+        $this->assertInstanceOf('\Doctrine\ORM\QueryBuilder', $queryBuilder);
     }
 
     public function testTreeLevel()
     {
         $categoryClass = self::CATEGORY_CLASS;
+
         /** @var Category $category */
         $category = new $categoryClass();
         $category->setId(3);
         $category->setName('Lorem');
-        $category->setTreeLevel(4);
         $this->manager->persist($category);
+
         /** @var Category $category2 */
         $category2 = new $categoryClass();
         $category2->setId(5);
         $category2->setName('Ipsum');
-        $category2->setTreeLevel(2);
+        $category2->setParent($category);
         $this->manager->persist($category2);
 
-        $queryBuilder = $this->getMockBuilder('Doctrine\ORM\QueryBuilder')
-            ->disableOriginalConstructor()
-            ->getMock();
+        /** @var Category $category3 */
+        $category3 = new $categoryClass();
+        $category3->setId(6);
+        $category3->setName('Dolor');
+        $category3->setParent($category2);
+        $this->manager->persist($category3);
 
-        $queryBuilder
-            ->expects($this->any())
-            ->method('addOrderBy')
-            ->willReturnSelf();
+        $this->manager->flush();
 
-        $query = $this->getMockBuilder('Doctrine\ORM\AbstractQuery')
-            ->setMethods(array('execute'))
-            ->disableOriginalConstructor()
-            ->getMockForAbstractClass();
-        $query->expects($this->once())
-            ->method('execute')
-            ->willReturn(array($category, $category2));
-
-        $queryBuilder
-            ->expects($this->once())
-            ->method('getQuery')
-            ->willReturn($query);
-
-        $formView = $this->formFactory->createNamed('category', 'y_tree', array($category), array(
+        $formView = $this->formFactory->createNamed('category', 'y_tree', $category, array(
             'class' => self::CATEGORY_CLASS,
-            'query_builder' => function() use($queryBuilder) {
-                return $queryBuilder;
-            }
         ))->createView();
 
-        $this->assertCount(2, $formView->vars['choices']);
-        $this->assertEquals('--------Lorem', $formView->vars['choices'][3]->label);
-        $this->assertEquals('----Ipsum', $formView->vars['choices'][5]->label);
+        $this->assertCount(3, $formView->vars['choices']);
+        reset($formView->vars['choices']);
+        $this->assertEquals('Lorem', current($formView->vars['choices'])->label);
+        $this->assertEquals('-Ipsum', next($formView->vars['choices'])->label);
+        $this->assertEquals('--Dolor', next($formView->vars['choices'])->label);
     }
 }

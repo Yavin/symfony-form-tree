@@ -4,36 +4,34 @@
 
 This extension provide displaying doctrine tree entity types in synfony forms. It add a prefix to option names in select list that indicates tree level.
 
+It is tested and should work with symfony 2.3-2.8
+
 ![](doc/example.png)
 
 ```html
-<select name="..." data-level-prefix="--">
+<select name="..." data-level-prefix="-">
     <option value="1">Motors</option>
     <option value="2">Electronics</option>
-    <option value="3">--Cell phones</option>
-    <option value="4">----Samsung</option>
-    <option value="5">--Computers</option>
+    <option value="3">-Cell phones</option>
+    <option value="4">--Samsung</option>
+    <option value="5">-Computers</option>
     <option value="6">Fasion</option>
 </select>
 ```
 
 ## Instalation
-1. Add library to composer.json
-   ```json
-   "yavin/symfony-form-tree": "dev-master"
+1. With composer.json
    ```
-   and run command
-   ```
-   composer update yavin/symfony-form-tree
+   composer require yavin/symfony-form-tree:0.3
    ```
 
 2. Add services in your bundle services file `Resources/config/services.xml`:
    ```xml
-   <service id="symfony.form.type.tree" class="Yavin\Symfony\Form\Type\TreeType">
+   <service class="Yavin\Symfony\Form\Type\TreeType">
        <argument type="service" id="property_accessor"/>
        <tag name="form.type" alias="y_tree"/>
    </service>
-   <service id="symfony.form.type_guesser.tree" class="Yavin\Symfony\Form\Type\TreeTypeGuesser">
+   <service class="Yavin\Symfony\Form\Type\TreeTypeGuesser">
        <argument type="service" id="doctrine"/>
        <tag name="form.type_guesser"/>
    </service>
@@ -63,16 +61,22 @@ This extension provide displaying doctrine tree entity types in synfony forms. I
 
         $builder->add('category', 'y_tree', array(
             'class' => 'Acme\DemoBundle\Entity\Category', // tree class
-            'levelPrefix' => '--',
-            'orderFields' => array('treeRoot', 'treeLeft'),
+            'levelPrefix' => '-',
+            'orderFields' => array('treeLeft' => 'asc'),
             'prefixAttributeName' => 'data-level-prefix',
             'treeLevelField' => 'treeLevel',
         ));
     }
     ```
 
-    This extension assume that in tree model You have field: `treeRoot`, `treeLeft` and `treeLevel`.
+    This extension assume that in tree model You have `treeLeft` and `treeLevel` fields.
     It can be changed in field options.
 
-    This is example tree entity:
-    [category tree entity](tests/Yavin/Symfony/Form/Type/Tests/Fixtures/Category.php)
+    [Here](tests/Yavin/Symfony/Form/Type/Tests/Fixtures/Category.php) is example tree entity.
+
+## Other
+* [Custom, callback provided prefix](doc/custom_prefix.md)
+* [Set default options to all tree select fields](doc/default_options.md)
+
+## Lincense
+[MIT](https://opensource.org/licenses/MIT)
