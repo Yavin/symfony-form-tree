@@ -1,6 +1,6 @@
 # Symfony Form Tree extension
 
-[![Build Status](https://travis-ci.org/Yavin/symfony-form-tree.png?branch=master)](https://travis-ci.org/Yavin/symfony-form-tree)
+[![Build Status](https://travis-ci.org/Yavin/symfony-form-tree.svg?branch=symfony-2)](https://travis-ci.org/Yavin/symfony-form-tree)
 
 This extension provide displaying doctrine tree entity types in synfony forms. It add a prefix to option names in select list that indicates tree level.
 
@@ -22,10 +22,10 @@ It is tested and should work with symfony 2.3-2.8
 ## Instalation
 1. With composer.json
    ```
-   composer require yavin/symfony-form-tree:0.3
+   composer require yavin/symfony-form-tree:0.4
    ```
 
-2. Add services in your bundle services file `Resources/config/services.xml`:
+2. Add services in your services file:
    ```xml
    <service class="Yavin\Symfony\Form\Type\TreeType">
        <argument type="service" id="property_accessor"/>
@@ -37,7 +37,7 @@ It is tested and should work with symfony 2.3-2.8
    </service>
    ```
 
-   or if you have `services.yml`:
+   or if you use `yml` format:
    ```yml
    services:
        symfony.form.type.tree:
@@ -72,7 +72,7 @@ It is tested and should work with symfony 2.3-2.8
     This extension assume that in tree model You have `treeLeft` and `treeLevel` fields.
     It can be changed in field options.
 
-    [Here](tests/Yavin/Symfony/Form/Type/Tests/Fixtures/Category.php) is example tree entity.
+    [Here](tests/Fixtures/Category.php) is example tree entity.
 
 ## Other
 * [Custom, callback provided prefix](doc/custom_prefix.md)

@@ -28,6 +28,6 @@ and add service:
 
 ```xml
 <service class="Acme\DemoBundle\Form\Extension\YTreeTypeExtension">
-    <tag name="form.type_extension" alias="y_tree" />
+    <tag name="form.type_extension" alias="y_tree"/>
 </service>
 ```
