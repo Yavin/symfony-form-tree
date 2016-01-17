@@ -3,9 +3,11 @@
 namespace Yavin\Symfony\Form\Type\Tests;
 
 use Gedmo\Tree\TreeListener;
+use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Guess\Guess;
 use Symfony\Component\Form\Guess\TypeGuess;
 use Yavin\Symfony\Form\Type\Tests\Fixtures\TestBase;
+use Yavin\Symfony\Form\Type\TreeType;
 use Yavin\Symfony\Form\Type\TreeTypeGuesser;
 
 class TreeTypeGuesserTest extends TestBase
@@ -36,7 +38,7 @@ class TreeTypeGuesserTest extends TestBase
         $guess = $this->treeTypeGuesser->guessType(self::POST_CLASS, 'category');
 
         $this->assertInstanceOf('Symfony\Component\Form\Guess\TypeGuess', $guess);
-        $this->assertEquals('y_tree', $guess->getType());
+        $this->assertEquals(TreeType::class, $guess->getType());
 
         $guessOptions = $guess->getOptions();
         $this->assertEquals(self::CATEGORY_CLASS, $guessOptions['class']);
@@ -59,7 +61,7 @@ class TreeTypeGuesserTest extends TestBase
         $guess = $this->treeTypeGuesser->guessType(self::POST_CLASS, 'sections');
 
         $this->assertInstanceOf('Symfony\Component\Form\Guess\TypeGuess', $guess);
-        $this->assertEquals('y_tree', $guess->getType());
+        $this->assertEquals(TreeType::class, $guess->getType());
 
         $guessOptions = $guess->getOptions();
         $this->assertEquals(self::SECTION_CLASS, $guessOptions['class']);
@@ -79,7 +81,7 @@ class TreeTypeGuesserTest extends TestBase
 
     public function testIntegration()
     {
-        $formBuilder = $this->formFactory->createBuilder('form', null, array(
+        $formBuilder = $this->formFactory->createBuilder(FormType::class, null, array(
             'data_class' => self::POST_CLASS,
         ));
 
@@ -87,7 +89,7 @@ class TreeTypeGuesserTest extends TestBase
         $form = $formBuilder->getForm();
 
         $this->assertInstanceOf(
-            'Yavin\Symfony\Form\Type\TreeType',
+            TreeType::class,
             $form->get('category')->getConfig()->getType()->getInnerType()
         );
     }

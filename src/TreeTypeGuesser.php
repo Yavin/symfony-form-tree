@@ -26,7 +26,7 @@ class TreeTypeGuesser extends DoctrineOrmTypeGuesser
         $multiple = $metadata->isCollectionValuedAssociation($property);
 
         return new TypeGuess(
-            'y_tree',
+            TreeType::class,
             array('class' => $associationMapping['targetEntity'], 'multiple' => $multiple),
             Guess::VERY_HIGH_CONFIDENCE
         );

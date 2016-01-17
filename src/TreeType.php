@@ -3,12 +3,12 @@
 namespace Yavin\Symfony\Form\Type;
 
 use Doctrine\ORM\EntityRepository;
+use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\Form\FormView;
 use Symfony\Component\OptionsResolver\Options;
 use Symfony\Component\OptionsResolver\OptionsResolver;
-use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use Symfony\Component\PropertyAccess\PropertyAccess;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 
@@ -24,14 +24,9 @@ class TreeType extends AbstractType
         $this->propertyAccessor = $propertyAccessor ?: PropertyAccess::createPropertyAccessor();
     }
 
-    public function getName()
-    {
-        return 'y_tree';
-    }
-
     public function getParent()
     {
-        return 'entity';
+        return EntityType::class;
     }
 
     public function buildView(FormView $view, FormInterface $form, array $options)
@@ -78,25 +73,9 @@ class TreeType extends AbstractType
             'treeLevelField' => 'treeLevel',
         ));
 
-        $resolver->setAllowedTypes(array(
-            'levelPrefix' => array('string', 'callable'),
-            'orderFields' => 'array',
-            'prefixAttributeName' => array('string', 'null'),
-            'treeLevelField' => 'string',
-        ));
-    }
-
-    public function setDefaultOptions(OptionsResolverInterface $resolver)
-    {
-        if (!$resolver instanceof OptionsResolver) {
-            throw new \InvalidArgumentException(
-                sprintf(
-                    'Custom resolver "%s" must extend "Symfony\Component\OptionsResolver\OptionsResolver".',
-                    get_class($resolver)
-                )
-            );
-        }
-
-        $this->configureOptions($resolver);
+        $resolver->setAllowedTypes('levelPrefix', ['string', 'callable']);
+        $resolver->setAllowedTypes('orderFields', ['array']);
+        $resolver->setAllowedTypes('prefixAttributeName', ['string', 'null']);
+        $resolver->setAllowedTypes('treeLevelField', ['string']);
     }
 }
