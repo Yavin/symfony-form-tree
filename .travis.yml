@@ -8,11 +8,13 @@ php:
 
 env:
   - SYMFONY=3.0.*
-  - SYMFONY=3.1.*@dev
+  - SYMFONY=3.1.*
+  - SYMFONY=3.2.*
+  - SYMFONY=3.3.*@dev
 
 matrix:
   allow_failures:
-    - env: SYMFONY=3.1.*@dev
+    - env: SYMFONY=3.3.*@dev
 
 install:
   - composer self-update
