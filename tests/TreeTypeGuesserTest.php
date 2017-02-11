@@ -81,9 +81,9 @@ class TreeTypeGuesserTest extends TestBase
 
     public function testIntegration()
     {
-        $formBuilder = $this->formFactory->createBuilder(FormType::class, null, array(
+        $formBuilder = $this->formFactory->createBuilder(FormType::class, null, [
             'data_class' => self::POST_CLASS,
-        ));
+        ]);
 
         $formBuilder->add('category');
         $form = $formBuilder->getForm();

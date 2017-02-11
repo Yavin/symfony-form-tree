@@ -7,7 +7,7 @@ use Yavin\Symfony\Form\Type\TreeType;
 
 public function buildForm(FormBuilderInterface $builder, array $options)
 {
-    $builder->add('category', TreeType::class, array(
+    $builder->add('category', TreeType::class, [
         'class' => Category::class, // tree class
         'levelPrefix' => function ($label, $level, $data) {
             //$label - original label
@@ -16,6 +16,6 @@ public function buildForm(FormBuilderInterface $builder, array $options)
 
             return 'your custom prefix';
         },
-    ));
+    ]);
 }
 ```

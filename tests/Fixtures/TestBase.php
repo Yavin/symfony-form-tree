@@ -50,11 +50,11 @@ class TestBase extends \PHPUnit_Framework_TestCase
         $this->formFactory = $this->createFormFactoryBuilder()->getFormFactory();
 
         $schemaTool = new SchemaTool($this->manager);
-        $classes = array(
+        $classes = [
             $this->manager->getClassMetadata(self::POST_CLASS),
             $this->manager->getClassMetadata(self::CATEGORY_CLASS),
             $this->manager->getClassMetadata(self::SECTION_CLASS),
-        );
+        ];
 
         try {
             $schemaTool->dropSchema($classes);
@@ -103,7 +103,7 @@ class TestBase extends \PHPUnit_Framework_TestCase
 
         $registry->expects($this->any())
             ->method('getManagers')
-            ->willReturn(array($this->manager));
+            ->willReturn([$this->manager]);
 
         $registry->expects($this->any())
             ->method('getManagerForClass')

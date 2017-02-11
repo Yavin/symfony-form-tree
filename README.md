@@ -24,7 +24,7 @@ If want to use this in symfony 2 look at "symfony-2" branch of this extension
 ## Instalation
 1. With composer.json
    ```
-   composer require yavin/symfony-form-tree:~1.0
+   composer require yavin/symfony-form-tree:^1.0
    ```
 
 2. Add type guesser in your services file (**optional**):
@@ -54,13 +54,13 @@ If want to use this in symfony 2 look at "symfony-2" branch of this extension
 
         //or this is full example with default options:
 
-        $builder->add('category', TreeType::class, array(
+        $builder->add('category', TreeType::class, [
             'class' => Category::class, // tree class
             'levelPrefix' => '-',
-            'orderFields' => array('treeLeft' => 'asc'),
+            'orderFields' => ['treeLeft' => 'asc'],
             'prefixAttributeName' => 'data-level-prefix',
             'treeLevelField' => 'treeLevel',
-        ));
+        ]);
     }
     ```
 

@@ -2,9 +2,7 @@
 
 namespace Yavin\Symfony\Form\Type\Tests\Fixtures;
 
-use Doctrine\ORM\EntityRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
-use Symfony\Component\OptionsResolver\Options;
 use Yavin\Symfony\Form\Type\TreeType;
 
 class TreeTypeTest extends TestBase
@@ -24,28 +22,28 @@ class TreeTypeTest extends TestBase
 
     public function testPrefixAndPrefixAttribute()
     {
-        $formView = $this->formFactory->createNamed('category', TreeType::class, null, array(
+        $formView = $this->formFactory->createNamed('category', TreeType::class, null, [
             'class' => self::CATEGORY_CLASS,
-        ))->createView();
+        ])->createView();
 
         $this->assertArrayHasKey('attr', $formView->vars);
         $this->assertArrayHasKey('data-level-prefix', $formView->vars['attr']);
         $this->assertEquals('-', $formView->vars['attr']['data-level-prefix']);
 
-        $formView = $this->formFactory->createNamed('category', TreeType::class, null, array(
+        $formView = $this->formFactory->createNamed('category', TreeType::class, null, [
             'class' => self::CATEGORY_CLASS,
             'levelPrefix' => '~',
             'prefixAttributeName' => 'data-lorem',
-        ))->createView();
+        ])->createView();
 
         $this->assertEquals('~', $formView->vars['attr']['data-lorem']);
     }
 
     public function testDefaultOrderColumnsAddedToQueryBuilder()
     {
-        $form = $this->formFactory->createNamed('category', TreeType::class, null, array(
+        $form = $this->formFactory->createNamed('category', TreeType::class, null, [
             'class' => self::CATEGORY_CLASS,
-        ));
+        ]);
 
         /** @var \Doctrine\ORM\QueryBuilder|\Closure $queryBuilder */
         $queryBuilder = $form->getConfig()->getOption('query_builder');
@@ -88,13 +86,13 @@ class TreeTypeTest extends TestBase
 
     public function testOrderColumnsAddedToQueryBuilder()
     {
-        $form = $this->formFactory->createNamed('category', TreeType::class, null, array(
+        $form = $this->formFactory->createNamed('category', TreeType::class, null, [
             'class' => self::CATEGORY_CLASS,
-            'orderFields' => array(
+            'orderFields' => [
                 'treeRight' => 'desc',
                 'treeLevel' => 'asc',
-            ),
-        ));
+            ],
+        ]);
 
         /** @var \Doctrine\ORM\QueryBuilder|\Closure $queryBuilder */
         $queryBuilder = $form->getConfig()->getOption('query_builder');
@@ -166,9 +164,9 @@ class TreeTypeTest extends TestBase
 
         $this->manager->flush();
 
-        $formView = $this->formFactory->createNamed('category', TreeType::class, $category, array(
+        $formView = $this->formFactory->createNamed('category', TreeType::class, $category, [
             'class' => self::CATEGORY_CLASS,
-        ))->createView();
+        ])->createView();
 
         $this->assertCount(3, $formView->vars['choices']);
         reset($formView->vars['choices']);

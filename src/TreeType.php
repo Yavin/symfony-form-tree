@@ -64,14 +64,14 @@ class TreeType extends AbstractType
             };
         };
 
-        $resolver->setDefaults(array(
+        $resolver->setDefaults([
             'query_builder' => $queryBuilder,
             'expanded' => false,
             'levelPrefix' => '-',
-            'orderFields' => array('treeLeft' => 'asc'),
+            'orderFields' => ['treeLeft' => 'asc'],
             'prefixAttributeName' => 'data-level-prefix',
             'treeLevelField' => 'treeLevel',
-        ));
+        ]);
 
         $resolver->setAllowedTypes('levelPrefix', ['string', 'callable']);
         $resolver->setAllowedTypes('orderFields', ['array']);

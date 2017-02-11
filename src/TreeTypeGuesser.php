@@ -27,7 +27,7 @@ class TreeTypeGuesser extends DoctrineOrmTypeGuesser
 
         return new TypeGuess(
             TreeType::class,
-            array('class' => $associationMapping['targetEntity'], 'multiple' => $multiple),
+            ['class' => $associationMapping['targetEntity'], 'multiple' => $multiple],
             Guess::VERY_HIGH_CONFIDENCE
         );
     }
